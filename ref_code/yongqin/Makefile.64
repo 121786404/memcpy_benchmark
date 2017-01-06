@@ -1,0 +1,201 @@
+BASE=/data/armv8/marshmallow/
+NDK=/SATA3/android-ndk-r10e/
+
+SYSROOT=$(NDK)/platforms/android-21/arch-arm64/
+TOOLCHAIN_GOOGLE_64=$(BASE)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/
+INCLUDE_GOOGLE_64=$(OOLCHAIN_GOOGLE_64)/lib/gcc/aarch64-linux-android/4.9.x-google/include
+CC_google_64=$(TOOLCHAIN_GOOGLE_64)/bin/aarch64-linux-android-gcc
+
+TOOLCHAIN_LINARO_64=$(BASE)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-5.3-linaro/
+INCLUDE_LINARO_64=$(OOLCHAIN_LINARO_64)/lib/gcc/aarch64-linux-android/5.3.0/include
+CC_linaro_64=$(TOOLCHAIN_LINARO_64)/bin/aarch64-linux-android-gcc
+
+CFLAGS_INCLUDES := \
+    -isystem $(BASE)/bionic/libc/arch-arm64/include \
+    -isystem $(BASE)/bionic/libc/include \
+    -isystem $(BASE)/bionic/libc/kernel/uapi \
+    -isystem $(BASE)/bionic/libc/kernel/uapi/asm-arm64 \
+    -isystem $(BASE)/bionic/libm/include \
+    -isystem $(BASE)/bionic/libm/include/arm64 \
+    -include $(BASE)/build/core/combo/include/arch/linux-arm64/AndroidConfig.h \
+    -I $(BASE)/build/core/combo/include/arch/linux-arm64/ \
+
+CFLAGS_OPTIONS_GOOD := \
+    -fno-strict-aliasing \
+    -fstack-protector \
+    -ffunction-sections \
+    -fdata-sections \
+    -funwind-tables \
+    -Wa,--noexecstack \
+    -Wformat \
+    -Werror=format-security \
+    -D_FORTIFY_SOURCE=2 \
+    -fno-short-enums \
+    -no-canonical-prefixes \
+    -fno-canonical-system-headers \
+    -mcpu=cortex-a53 \
+    -Werror=pointer-to-int-cast \
+    -Werror=int-to-pointer-cast \
+    -Werror=implicit-function-declaration \
+    -fno-strict-volatile-bitfields \
+    -Wno-psabi \
+    -std=c11 \
+    -O2
+
+# not really necessry but help on more check
+CFLAGS_OPTIONS_EXTRA := \
+    -fno-exceptions \
+    -Wno-multichar \
+    -DANDROID \
+    -fmessage-length=0 \
+    -W \
+    -Wall \
+    -Wno-unused \
+    -Winit-self \
+    -Wpointer-arith \
+    -Werror=return-type \
+    -Werror=non-virtual-dtor \
+    -Werror=address \
+    -Werror=sequence-point \
+    -g \
+    -Wstrict-aliasing=2 \
+    -fgcse-after-reload \
+    -frerun-cse-after-loop \
+    -frename-registers \
+    -DNDEBUG \
+    -UDEBUG   \
+    -D_USING_LIBCXX   \
+    -Werror=int-to-pointer-cast \
+    -Werror=pointer-to-int-cast  \
+
+LDFLAGS_OPTIONS_GOOD := \
+    -Wl,-z,noexecstack \
+    -Wl,-z,relro \
+    -Wl,-z,now \
+    -Wl,--build-id=md5 \
+    -Wl,--warn-shared-textrel \
+    -Wl,--fatal-warnings \
+    -Wl,-maarch64linux \
+    -Wl,--hash-style=gnu \
+    -Wl,--fix-cortex-a53-843419 \
+    -Wl,--allow-shlib-undefined \
+    -Wl,--no-undefined \
+
+#############################################################################
+############## meanings of GCC options ######################################
+#############################################################################
+# -I dir
+#   Add the directory dir to the list of directories to be searched for header files.
+#   Directories named by -I are searched before the standard system include directories.
+#   If the directory dir is a standard system include directory, the option is ignored to ensure that the default search order for system directories and the special treatment of system headers are not defeated .
+#   If dir begins with "=", then the "=" will be replaced by the sysroot prefix; see --sysroot and -isysroot.
+
+# -isystem dir
+#   Search dir for header files, after all directories specified by -I but before the standard system directories.
+#   Mark it as a system directory, so that it gets the same special treatment as is applied to the standard system directories.
+#   If dir begins with "=", then the "=" will be replaced by the sysroot prefix; see --sysroot and -isysroot.
+
+# -include file
+#   Process file as if "#include "file"" appeared as the first line of the primary source file.
+#   However, the first directory searched for file is the preprocessor's working directory instead of the directory containing the main source file.
+#   If not found there, it is searched for in the remainder of the "#include "..."" search chain as normal.
+#   If multiple -include options are given, the files are included in the order they appear on the command line.
+
+# -isysroot dir
+#   This option is like the --sysroot option, but applies only to header files (except for Darwin targets, where it applies to both header files and libraries).
+#   See the --sysroot option for more information
+
+# --sysroot=dir
+#   Use dir as the logical root directory for headers and libraries.
+#   For example, if the compiler normally searches for headers in /usr/include and libraries in /usr/lib,
+#       it instead searches dir/usr/include and dir/usr/lib.
+#   If you use both this option and the -isysroot option, then the --sysroot option applies to libraries, but the -isysroot option applies to header files.
+#   The GNU linker (beginning with version 2.16) has the necessary support for this option.
+#   If your linker does not support this option, the header file aspect of --sysroot still works, but the library aspect does not.
+
+# -mfloat-abi=name
+#   Specifies which floating-point ABI to use.  Permissible values are: soft, softfp and hard.
+#       soft causes GCC to generate output containing library calls for floating-point operations.
+#       softfp allows the generation of code using hardware floating-point instructions, but still uses the soft-float calling conventions.
+#       hard allows generation of floating-point instructions and uses FPU-specific calling conventions.
+#
+#   The default depends on the specific target configuration.
+#   Note that the hard-float and soft-float ABIs are not link-compatible;
+#   you must compile your entire program with the same ABI, and link with a compatible set of libraries.
+
+# -msoft-float
+#   Use library routines for floating-point operations.
+#   Not supported by aarch64 gcc
+
+# -mhard-float
+#   Use hardware instructions for floating-point operations.
+#   Not supported by aarch64 gcc
+
+# -static
+#   On systems that support dynamic linking, this prevents linking with the shared libraries.
+#   On other systems, this option has no effect.
+
+# -nostdlib
+#   Do not use the standard system startup files or libraries when linking.
+#   No startup files and only the libraries you specify are passed to the linker, and options specifying linkage of the system libraries,
+#   such as "-static-libgcc" or "-shared-libgcc", are ignored.
+#   The compiler may generate calls to "memcmp", "memset", "memcpy" and "memmove".
+#   These entries are usually resolved by entries in libc.
+#   These entry points should be supplied through some other mechanism when this option is specified.
+#
+#   One of the standard libraries bypassed by -nostdlib and -nodefaultlibs is libgcc.a,
+#   a library of internal subroutines which GCC uses to overcome shortcomings of particular machines, or special needs for some languages.
+#   In most cases, you need libgcc.a even when you want to avoid other standard libraries.
+#   In other words, when you specify -nostdlib or -nodefaultlibs you should usually specify -lgcc as well.
+#   This ensures that you have no unresolved references to internal GCC library subroutines.
+#   (An example of such an internal subroutine is __main, used to ensure C++ constructors are called.)
+
+# -pie
+#   Produce a position independent executable on targets that support it.
+#   For predictable results, you must also specify the same set of options used for compilation (-fpie, -fPIE, or model suboptions) when you specify this linker option.
+
+src := main_strcpy.c string_copy_linaro_wrapper.S string_copy_google_wrapper.S
+# no need to list asm source files that is included in the .S file
+# src += asm/asm.h asm/bionic_asm.h asm/bitsperlong.h asm/unistd.h
+
+## -Wl,--gc-sections -Wl,--whole-archive -Wl,--no-whole-archive and -D_USING_LIBCXX help on building the static link binary
+all: strcpy_test_linaro \
+     strcpy_test_linaro_static \
+     strcpy_test_google \
+     strcpy_test_google_static \
+     move
+
+strcpy_test_linaro_static: $(src)
+	$(CC_linaro_64) \
+        $(CFLAGS_INCLUDES) $(CFLAGS_OPTIONS_GOOD) $(CFLAGS_OPTIONS_EXTRA) $(LDFLAGS_OPTIONS_GOOD) \
+        -nostdlib -static -Bstatic -D_USING_LIBCXX -Wl,--gc-sections -Wl,--whole-archive -Wl,--no-whole-archive \
+        -o $@ $^ $(SYSROOT)/usr/lib/crtbegin_static.o \
+        -Wl,--start-group $(SYSROOT)/usr/lib/libc.a $(TOOLCHAIN_LINARO_64)/lib/gcc/aarch64-linux-android/5.3.0/libgcc.a \
+	    -Wl,--end-group $(SYSROOT)/usr/lib/crtend_android.o
+
+strcpy_test_google_static: $(src)
+	$(CC_google_64) \
+        $(CFLAGS_INCLUDES) $(CFLAGS_OPTIONS_GOOD) $(CFLAGS_OPTIONS_EXTRA)  $(LDFLAGS_OPTIONS_GOOD) \
+        -nostdlib -static -Bstatic -D_USING_LIBCXX -Wl,--gc-sections -Wl,--whole-archive -Wl,--no-whole-archive \
+        -o $@ $^ $(SYSROOT)/usr/lib/crtbegin_static.o \
+        -Wl,--start-group $(SYSROOT)/usr/lib/libc.a $(TOOLCHAIN_GOOGLE_64)/lib/gcc/aarch64-linux-android/4.9.x-google/libgcc.a \
+	    -Wl,--end-group $(SYSROOT)/usr/lib/crtend_android.o
+
+strcpy_test_linaro:  $(src)
+	$(CC_linaro_64) $(CFLAGS_INCLUDES) $(CFLAGS_OPTIONS_GOOD) $(CFLAGS_OPTIONS_EXTRA) $(LDFLAGS_OPTIONS_GOOD) \
+       --sysroot=$(SYSROOT) \
+       -fPIE -pie \
+	    $^ -o $@
+
+strcpy_test_google: $(src)
+	$(CC_google_64) $(CFLAGS_INCLUDES) $(CFLAGS_OPTIONS_GOOD) $(CFLAGS_OPTIONS_EXTRA) $(LDFLAGS_OPTIONS_GOOD) \
+       --sysroot=$(SYSROOT) \
+       -fPIE -pie \
+	   $^ -o $@
+
+move:
+	@mkdir -p bin/
+	@mv -v strcpy_test* bin/
+
+clean:
+	rm -vf bin/strcpy_test*
