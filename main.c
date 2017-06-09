@@ -83,6 +83,15 @@ main (int argc, char *argv[])
         gettimeofday (&start, NULL);
         loops = bench->loops + 1;
         while (--loops)
+            ad_memcpy_glibcnew (dst, src, len);
+        gettimeofday (&end, NULL);
+        timersub (&end, &start, &end);
+        mbps = (bench->loops * bench->len * 1000000.0d) / (double)(end.tv_sec * 1000000.0d + end.tv_usec) / 1024 / 1024;
+        printf ("  memcpy (memcpy glibc new)  took %2ju.%.6ju s  ~ %'.1f MiB/s\n", (uintmax_t)end.tv_sec, (uintmax_t)end.tv_usec, mbps);
+
+        gettimeofday (&start, NULL);
+        loops = bench->loops + 1;
+        while (--loops)
             ad_memcpy_bionic (dst, src, len);
         gettimeofday (&end, NULL);
         timersub (&end, &start, &end);
